@@ -1,0 +1,6 @@
+{
+  "name": "Chess Review AI",
+  "description": "Analyze your Chess.com public games instantly without signup. Get complete move-by-move Stockfish game reviews, lifetime insights, brilliant moves tracking, and a custom Chess DNA report powered by Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
