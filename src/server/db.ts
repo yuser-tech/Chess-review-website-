@@ -2,8 +2,10 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure data directory exists
-const dbPath = path.resolve(process.cwd(), 'database.sqlite');
+// Use a writable path for production (Cloud Run) and local process.cwd() for development
+const dbPath = process.env.NODE_ENV === 'production' 
+  ? '/tmp/database.sqlite' 
+  : path.resolve(process.cwd(), 'database.sqlite');
 
 export const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {

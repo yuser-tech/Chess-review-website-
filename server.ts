@@ -906,10 +906,22 @@ app.post('/api/game/analyze', async (req, res) => {
   res.json(gameReviewResult);
 });
 
+// Global crash-prevention and logging handlers
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION AT:', promise, 'REASON:', reason);
+});
+
 // Start express server and hook Vite in development
 async function startServer() {
-  // Initialize the database tables
-  await initDb();
+  // Initialize the database tables with error tolerance
+  try {
+    await initDb();
+  } catch (dbErr) {
+    console.error('CRITICAL: Failed to initialize SQLite database:', dbErr);
+  }
 
   // Mount Vite middleware or static server
   if (process.env.NODE_ENV !== 'production') {
