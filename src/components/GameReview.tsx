@@ -25,6 +25,7 @@ export default function GameReview({ game, onBackToGames }: GameReviewProps) {
   const [stockfishEval, setStockfishEval] = useState<string>('0.30');
   const [stockfishLines, setStockfishLines] = useState<string[]>([]);
   const [isStockfishLoading, setIsStockfishLoading] = useState(false);
+  const [engineProfile, setEngineProfile] = useState<'fast' | 'standard' | 'deep'>('standard');
 
   const stockfishRef = useRef<Worker | null>(null);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -125,9 +126,13 @@ export default function GameReview({ game, onBackToGames }: GameReviewProps) {
     if (stockfishRef.current && !isStockfishLoading) {
       const currentFen = getFenAtMove(currentMoveIndex);
       stockfishRef.current.postMessage(`position fen ${currentFen}`);
-      stockfishRef.current.postMessage('go depth 10');
+      
+      // Determine depth based on Chess.com Game Review profiles:
+      // Fast = Depth 18, Standard = Depth 20, Deep = Depth 22
+      const depth = engineProfile === 'fast' ? 18 : engineProfile === 'standard' ? 20 : 22;
+      stockfishRef.current.postMessage(`go depth ${depth}`);
     }
-  }, [currentMoveIndex, isStockfishLoading]);
+  }, [currentMoveIndex, isStockfishLoading, engineProfile]);
 
   // Handle Autoplay Loop
   useEffect(() => {
@@ -414,19 +419,66 @@ export default function GameReview({ game, onBackToGames }: GameReviewProps) {
             </div>
 
             {/* Live Engine Suggestions Box */}
-            <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-2xl flex justify-between items-center gap-4">
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Stockfish Live Eval</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-bold font-mono ${stockfishEval.includes('+') ? 'text-emerald-400' : 'text-slate-300'}`}>{stockfishEval}</span>
-                  <span className="text-xs text-slate-500 font-mono">(depth 10)</span>
+            <div className="bg-slate-950/60 border border-slate-850 p-4 rounded-2xl space-y-4">
+              <div className="flex justify-between items-center gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Stockfish 16 Engine</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold font-mono ${stockfishEval.includes('+') ? 'text-emerald-400' : 'text-slate-300'}`}>{stockfishEval}</span>
+                    <span className="text-xs text-slate-500 font-mono">
+                      (depth {engineProfile === 'fast' ? 18 : engineProfile === 'standard' ? 20 : 22})
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-1 text-right">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Candidate Lines</span>
+                  <p className="text-xs font-semibold text-slate-300 font-mono mt-0.5">
+                    {stockfishLines.length > 0 ? stockfishLines.join(' ➔ ') : 'Analyzing...'}
+                  </p>
                 </div>
               </div>
-              <div className="space-y-1 text-right">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Candidate Lines</span>
-                <p className="text-xs font-semibold text-slate-300 font-mono mt-0.5">
-                  {stockfishLines.length > 0 ? stockfishLines.join(' ➔ ') : 'Analyzing...'}
-                </p>
+
+              {/* Engine Profile Selection (Chess.com depths) */}
+              <div className="border-t border-slate-850/50 pt-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-xs text-slate-400 flex items-center gap-1.5 font-sans">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Chess.com Engine Specs
+                </span>
+                <div className="flex gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+                  <button
+                    onClick={() => setEngineProfile('fast')}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                      engineProfile === 'fast' 
+                        ? 'bg-slate-800 text-emerald-400 font-bold border border-slate-700/50' 
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                    title="Chess.com Fast Review depth (Depth 18)"
+                  >
+                    Fast (d18)
+                  </button>
+                  <button
+                    onClick={() => setEngineProfile('standard')}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                      engineProfile === 'standard' 
+                        ? 'bg-slate-800 text-emerald-400 font-bold border border-slate-700/50' 
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                    title="Chess.com Standard Review depth (Depth 20)"
+                  >
+                    Standard (d20)
+                  </button>
+                  <button
+                    onClick={() => setEngineProfile('deep')}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all ${
+                      engineProfile === 'deep' 
+                        ? 'bg-slate-800 text-emerald-400 font-bold border border-slate-700/50' 
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                    title="Chess.com Deep Review depth (Depth 22)"
+                  >
+                    Deep (d22)
+                  </button>
+                </div>
               </div>
             </div>
 

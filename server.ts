@@ -106,6 +106,21 @@ async function syncPlayerArchivesInBackground(username: string) {
           if (!game.pgn) continue;
 
           const gameId = game.url; // Use chess.com game URL as unique ID
+
+          // Check if this game is already in our cache to avoid re-generating randomized stats on every sync
+          const existingGame = await dbGet(`SELECT game_id FROM cached_games WHERE game_id = ?`, [gameId]);
+          if (existingGame) {
+            processedCount++;
+            if (processedCount % 10 === 0 || processedCount === totalGames) {
+              await dbRun(`
+                UPDATE player_archives_progress 
+                SET processed_games = ? 
+                WHERE username = ? AND archive_url = ?
+              `, [processedCount, lowerUsername, archiveUrl]);
+            }
+            continue;
+          }
+
           const whiteUsername = game.white.username.toLowerCase();
           const blackUsername = game.black.username.toLowerCase();
           const playerColor = whiteUsername === lowerUsername ? 'white' : 'black';
