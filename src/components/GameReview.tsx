@@ -30,6 +30,32 @@ export default function GameReview({ game, onBackToGames }: GameReviewProps) {
   const stockfishRef = useRef<Worker | null>(null);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Responsive board width measurement
+  const [boardWidth, setBoardWidth] = useState<number>(400);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    // Initial measure
+    const initialRect = containerRef.current.getBoundingClientRect();
+    if (initialRect.width > 0) {
+      setBoardWidth(initialRect.width - 16); // subtract padding (p-2 is 8px left + 8px right)
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        if (width > 0) {
+          setBoardWidth(width); // contentRect.width is the content width already
+        }
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [analysis]);
+
   // Fetch detailed review from server
   useEffect(() => {
     async function fetchReview() {
@@ -325,10 +351,13 @@ export default function GameReview({ game, onBackToGames }: GameReviewProps) {
               </div>
 
               {/* Main Board View */}
-              <div className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl overflow-hidden aspect-square">
+              <div 
+                ref={containerRef}
+                className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl overflow-hidden aspect-square"
+              >
                 <SafeChessboard 
                   position={currentFen} 
-                  boardWidth={undefined} // responsive fluid width
+                  boardWidth={boardWidth} 
                   boardOrientation={game.color}
                   arePiecesDraggable={false} // Analysis board is viewer-only
                   customBoardStyle={{
